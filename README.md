@@ -39,7 +39,6 @@ Daily Goal: $
 <p>Session Time (Kampala): <span id="time"></span></p>
 </div>
 
-<!-- PERFORMANCE -->
 <div class="card">
 <h3>Performance Dashboard</h3>
 <p>Total Profit: $<span id="totalProfit">0</span></p>
@@ -50,7 +49,6 @@ Daily Goal: $
 <p>Session Profit: $<span id="sessionProfit">0</span></p>
 </div>
 
-<!-- SESSION SUMMARY -->
 <div class="card">
 <h3>Session Summary</h3>
 <table>
@@ -67,55 +65,28 @@ Daily Goal: $
 </table>
 </div>
 
-<!-- TRADE SETUP -->
 <div class="card">
 <h3>Quick Trade Setup</h3>
 
 <select id="pairInput">
 <option value="">Select Pair</option>
+<option>EUR/USD</option><option>GBP/USD</option><option>USD/JPY</option>
+<option>USD/CHF</option><option>AUD/USD</option><option>USD/CAD</option>
+<option>EUR/GBP</option><option>EUR/JPY</option><option>GBP/JPY</option>
+<option>AUD/CAD</option><option>AUD/CHF</option><option>CAD/JPY</option>
+<option>CHF/JPY</option><option>EUR/AUD</option><option>EUR/CAD</option>
+<option>EUR/CHF</option><option>GBP/AUD</option><option>GBP/CAD</option>
+<option>GBP/CHF</option><option>CAD/CHF</option><option>AUD/JPY</option>
 
-<option>EUR/USD</option>
-<option>GBP/USD</option>
-<option>USD/JPY</option>
-<option>USD/CHF</option>
-<option>AUD/USD</option>
-<option>USD/CAD</option>
-<option>EUR/GBP</option>
-
-<option>EUR/JPY</option>
-<option>GBP/JPY</option>
-<option>AUD/CAD</option>
-<option>AUD/CHF</option>
-<option>CAD/JPY</option>
-<option>CHF/JPY</option>
-<option>EUR/AUD</option>
-<option>EUR/CAD</option>
-<option>EUR/CHF</option>
-<option>GBP/AUD</option>
-<option>GBP/CAD</option>
-<option>GBP/CHF</option>
-<option>CAD/CHF</option>
-<option>AUD/JPY</option>
-
-<option>EUR/USD OTC</option>
-<option>GBP/USD OTC</option>
-<option>USD/JPY OTC</option>
-<option>USD/CHF OTC</option>
-<option>AUD/USD OTC</option>
-<option>USD/CAD OTC</option>
-<option>EUR/GBP OTC</option>
-
-<option>AUD/CAD OTC</option>
-<option>AUD/CHF OTC</option>
-<option>AUD/NZD OTC</option>
-<option>CAD/CHF OTC</option>
-<option>CAD/JPY OTC</option>
-<option>CHF/JPY OTC</option>
-<option>EUR/JPY OTC</option>
-<option>EUR/NZD OTC</option>
-<option>LBP/USD OTC</option>
+<option>EUR/USD OTC</option><option>GBP/USD OTC</option>
+<option>USD/JPY OTC</option><option>USD/CHF OTC</option>
+<option>AUD/USD OTC</option><option>USD/CAD OTC</option>
+<option>EUR/GBP OTC</option><option>AUD/CAD OTC</option>
+<option>AUD/CHF OTC</option><option>AUD/NZD OTC</option>
+<option>CAD/CHF OTC</option><option>CAD/JPY OTC</option>
+<option>CHF/JPY OTC</option><option>EUR/JPY OTC</option>
+<option>EUR/NZD OTC</option><option>LBP/USD OTC</option>
 <option>GBP/JPY OTC</option>
-
 </select>
 
 <br>
@@ -127,11 +98,8 @@ Payout %:
 
 <button class="buy" onclick="setSignal('BUY')">BUY</button>
 <button class="sell" onclick="setSignal('SELL')">SELL</button>
-
-<p id="quickStatus">No signal selected</p>
 </div>
 
-<!-- SIGNAL -->
 <div class="card">
 <p>Pair: <span id="pair">---</span></p>
 <p>Signal: <span id="signal">---</span></p>
@@ -143,7 +111,6 @@ Payout %:
 <p id="lock"></p>
 </div>
 
-<!-- ACTIONS -->
 <div class="card">
 <button class="exec" id="executeBtn" onclick="executeTrade()" disabled>EXECUTE</button>
 <button class="win" onclick="setResult('win')">WIN</button>
@@ -153,7 +120,6 @@ Payout %:
 <button class="print" onclick="window.print()">EXPORT / PRINT</button>
 </div>
 
-<!-- STATS -->
 <div class="card">
 <p>Trades: <span id="trades">0</span>/10</p>
 <p>Wins: <span id="wins">0</span></p>
@@ -161,7 +127,6 @@ Payout %:
 <p>Loss Streak: <span id="streak">0</span></p>
 </div>
 
-<!-- HISTORY -->
 <div class="card">
 <h3>Trade History</h3>
 <table>
@@ -178,14 +143,12 @@ Payout %:
 
 <script>
 
-// CORE
 let balance=50, baseBalance=50, goal=62;
 let riskPercent=2, recoveryMode=false, recoveryLoss=0;
 let trades=0,wins=0,losses=0,lossStreak=0;
 
 let totalProfit=0, sessionProfit=0;
 let pairStats={}, sessionPairs={};
-
 let sessionCount=1;
 
 let current={pair:null,signal:null,score:0,payout:0,executed:false};
@@ -210,22 +173,18 @@ let payout=parseFloat(document.getElementById("payoutInput").value);
 
 if(!pair || !payout){alert("Select pair & payout");return;}
 
-let confidence=80;
-if(recoveryMode) confidence=70;
-if(wins>=2) confidence=85;
-
-current={pair,signal:type,score:confidence,payout,executed:false};
+current={pair,signal:type,score:80,payout,executed:false};
 
 document.getElementById("executeBtn").disabled=false;
 document.getElementById("pair").innerText=pair;
 document.getElementById("signal").innerText=type;
-document.getElementById("score").innerText=confidence;
+document.getElementById("score").innerText=80;
 document.getElementById("payout").innerText=payout;
 }
 
 // EXECUTE
 function executeTrade(){
-if(current.executed){alert("Already executed");return;}
+if(current.executed){return;}
 current.executed=true;
 document.getElementById("executeBtn").disabled=true;
 }
@@ -254,22 +213,26 @@ recoveryLoss-=stake;
 if(recoveryLoss<=0){recoveryMode=false;riskPercent=2;recoveryLoss=0;}
 }
 
-// performance
 updatePerformance(current.pair,profit);
-
-// history
 addHistory(start,profit);
 
-// SESSION END
+// SESSION FIX (DELAY SAFE)
 if(lossStreak>=3 || trades>=10){
-saveSession();
 
+setTimeout(()=>{
+saveSession();
+},50);
+
+setTimeout(()=>{
 trades=0;
 wins=0;
 losses=0;
 lossStreak=0;
 
 document.getElementById("status").innerHTML="<span class='green'>SESSION COMPLETE</span>";
+updateUI();
+},120);
+
 }
 
 current.executed=false;
@@ -304,36 +267,38 @@ document.getElementById("totalLosses").innerText=losses;
 document.getElementById("bestPair").innerText=best;
 }
 
-// SAVE SESSION (FIXED)
+// SAVE SESSION (FINAL FIX)
 function saveSession(){
+
+let table=document.getElementById("sessionTable");
 
 let now=new Date();
 let date=now.getDate()+"/"+(now.getMonth()+1)+"/"+now.getFullYear();
 
-let sortedPairs = Object.entries(sessionPairs)
+let pairs = Object.keys(sessionPairs).length>0
+? Object.entries(sessionPairs)
 .sort((a,b)=>b[1].profit-a[1].profit)
 .slice(0,3)
-.map(x=>x[0]);
+.map(x=>x[0]).join(", ")
+: "-";
 
-let bestPairs = sortedPairs.length ? sortedPairs.join(", ") : "-";
+let goalReached = balance>=goal;
 
-let goalReached = balance >= goal;
-
-let row = document.createElement("tr");
+let row=document.createElement("tr");
 
 if(goalReached){
-row.style.background = "#064e3b";
+row.style.background="#064e3b";
 }
 
-row.innerHTML = `
+row.innerHTML=`
 <td>${date}</td>
 <td>${sessionCount}</td>
-<td>${goalReached ? goal.toFixed(2) : '-'}</td>
+<td>${goalReached?goal.toFixed(2):'-'}</td>
 <td>${sessionProfit.toFixed(2)}</td>
-<td>${bestPairs}</td>
+<td>${pairs}</td>
 `;
 
-document.getElementById("sessionTable").appendChild(row);
+table.appendChild(row);
 
 sessionCount++;
 sessionProfit=0;
