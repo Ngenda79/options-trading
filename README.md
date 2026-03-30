@@ -50,7 +50,7 @@ Daily Goal: $
 <p>Session Profit: $<span id="sessionProfit">0</span></p>
 </div>
 
-<!-- SESSION TABLE -->
+<!-- SESSION SUMMARY -->
 <div class="card">
 <h3>Session Summary</h3>
 <table>
@@ -131,7 +131,7 @@ Payout %:
 <p id="quickStatus">No signal selected</p>
 </div>
 
-<!-- SIGNAL INFO -->
+<!-- SIGNAL -->
 <div class="card">
 <p>Pair: <span id="pair">---</span></p>
 <p>Signal: <span id="signal">---</span></p>
@@ -198,7 +198,7 @@ document.getElementById("time").innerText=
 new Date().toLocaleString("en-UG",{timeZone:"Africa/Kampala"});
 },1000);
 
-// SET GOAL
+// GOAL
 function setGoal(){
 goal=parseFloat(document.getElementById("goalInput").value);
 }
@@ -247,25 +247,31 @@ trades++;
 if(res==="win"){wins++;lossStreak=0;}
 else{losses++;lossStreak++;}
 
-// recovery logic
+// recovery
 if(res==="loss"){recoveryMode=true;recoveryLoss+=stake;riskPercent=1;}
 if(recoveryMode && res==="win"){
 recoveryLoss-=stake;
 if(recoveryLoss<=0){recoveryMode=false;riskPercent=2;recoveryLoss=0;}
 }
 
-// PERFORMANCE UPDATE
+// performance
 updatePerformance(current.pair,profit);
 
-// HISTORY
+// history
 addHistory(start,profit);
 
 // SESSION END
 if(lossStreak>=3 || trades>=10){
 saveSession();
+
+trades=0;
+wins=0;
+losses=0;
+lossStreak=0;
+
+document.getElementById("status").innerHTML="<span class='green'>SESSION COMPLETE</span>";
 }
 
-// RESET CURRENT TRADE
 current.executed=false;
 updateUI();
 }
@@ -298,29 +304,36 @@ document.getElementById("totalLosses").innerText=losses;
 document.getElementById("bestPair").innerText=best;
 }
 
-// SAVE SESSION
+// SAVE SESSION (FIXED)
 function saveSession(){
 
 let now=new Date();
 let date=now.getDate()+"/"+(now.getMonth()+1)+"/"+now.getFullYear();
 
-let sorted=Object.entries(sessionPairs)
+let sortedPairs = Object.entries(sessionPairs)
 .sort((a,b)=>b[1].profit-a[1].profit)
 .slice(0,3)
-.map(x=>x[0])
-.join(", ");
+.map(x=>x[0]);
 
-let goalReached = balance>=goal;
+let bestPairs = sortedPairs.length ? sortedPairs.join(", ") : "-";
 
-let row=`<tr style="${goalReached?'background:#064e3b':''}">
+let goalReached = balance >= goal;
+
+let row = document.createElement("tr");
+
+if(goalReached){
+row.style.background = "#064e3b";
+}
+
+row.innerHTML = `
 <td>${date}</td>
 <td>${sessionCount}</td>
 <td>${goalReached ? goal.toFixed(2) : '-'}</td>
 <td>${sessionProfit.toFixed(2)}</td>
-<td>${sorted || '-'}</td>
-</tr>`;
+<td>${bestPairs}</td>
+`;
 
-document.getElementById("sessionTable").innerHTML+=row;
+document.getElementById("sessionTable").appendChild(row);
 
 sessionCount++;
 sessionProfit=0;
