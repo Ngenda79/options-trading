@@ -39,17 +39,32 @@ Daily Goal: $
 <p>Session Time (Kampala): <span id="time"></span></p>
 </div>
 
-<!-- PERFORMANCE DASHBOARD -->
+<!-- PERFORMANCE -->
 <div class="card">
 <h3>Performance Dashboard</h3>
-
 <p>Total Profit: $<span id="totalProfit">0</span></p>
 <p>Win Rate: <span id="winRate">0</span>%</p>
 <p>Total Trades: <span id="totalTrades">0</span></p>
 <p>Wins: <span id="totalWins">0</span> | Losses: <span id="totalLosses">0</span></p>
 <p>Best Pair: <span id="bestPair">---</span></p>
 <p>Session Profit: $<span id="sessionProfit">0</span></p>
+</div>
 
+<!-- SESSION TABLE -->
+<div class="card">
+<h3>Session Summary</h3>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Session #</th>
+<th>Daily Goal $</th>
+<th>Session Profit $</th>
+<th>Best Pairs (Top 3)</th>
+</tr>
+</thead>
+<tbody id="sessionTable"></tbody>
+</table>
 </div>
 
 <!-- TRADE SETUP -->
@@ -116,6 +131,7 @@ Payout %:
 <p id="quickStatus">No signal selected</p>
 </div>
 
+<!-- SIGNAL INFO -->
 <div class="card">
 <p>Pair: <span id="pair">---</span></p>
 <p>Signal: <span id="signal">---</span></p>
@@ -127,6 +143,7 @@ Payout %:
 <p id="lock"></p>
 </div>
 
+<!-- ACTIONS -->
 <div class="card">
 <button class="exec" id="executeBtn" onclick="executeTrade()" disabled>EXECUTE</button>
 <button class="win" onclick="setResult('win')">WIN</button>
@@ -136,6 +153,7 @@ Payout %:
 <button class="print" onclick="window.print()">EXPORT / PRINT</button>
 </div>
 
+<!-- STATS -->
 <div class="card">
 <p>Trades: <span id="trades">0</span>/10</p>
 <p>Wins: <span id="wins">0</span></p>
@@ -143,6 +161,7 @@ Payout %:
 <p>Loss Streak: <span id="streak">0</span></p>
 </div>
 
+<!-- HISTORY -->
 <div class="card">
 <h3>Trade History</h3>
 <table>
@@ -159,43 +178,212 @@ Payout %:
 
 <script>
 
-// EXISTING VARIABLES...
+// CORE
 let balance=50, baseBalance=50, goal=62;
-let totalProfit=0, sessionProfit=0;
-let pairStats={};
+let riskPercent=2, recoveryMode=false, recoveryLoss=0;
+let trades=0,wins=0,losses=0,lossStreak=0;
 
-function updatePerformance(pair, profit){
+let totalProfit=0, sessionProfit=0;
+let pairStats={}, sessionPairs={};
+
+let sessionCount=1;
+
+let current={pair:null,signal:null,score:0,payout:0,executed:false};
+
+const MIN_STAKE=1;
+
+// TIME
+setInterval(()=>{
+document.getElementById("time").innerText=
+new Date().toLocaleString("en-UG",{timeZone:"Africa/Kampala"});
+},1000);
+
+// SET GOAL
+function setGoal(){
+goal=parseFloat(document.getElementById("goalInput").value);
+}
+
+// SIGNAL
+function setSignal(type){
+let pair=document.getElementById("pairInput").value;
+let payout=parseFloat(document.getElementById("payoutInput").value);
+
+if(!pair || !payout){alert("Select pair & payout");return;}
+
+let confidence=80;
+if(recoveryMode) confidence=70;
+if(wins>=2) confidence=85;
+
+current={pair,signal:type,score:confidence,payout,executed:false};
+
+document.getElementById("executeBtn").disabled=false;
+document.getElementById("pair").innerText=pair;
+document.getElementById("signal").innerText=type;
+document.getElementById("score").innerText=confidence;
+document.getElementById("payout").innerText=payout;
+}
+
+// EXECUTE
+function executeTrade(){
+if(current.executed){alert("Already executed");return;}
+current.executed=true;
+document.getElementById("executeBtn").disabled=true;
+}
+
+// RESULT
+function setResult(res){
+
+if(!current.executed){alert("Execute trade first");return;}
+
+let start=balance;
+let stake=Math.max(balance*(riskPercent/100),MIN_STAKE);
+stake=Math.min(stake,balance*0.05);
+
+let profit = res==="win" ? stake*(current.payout/100) : -stake;
+
+balance+=profit;
+trades++;
+
+if(res==="win"){wins++;lossStreak=0;}
+else{losses++;lossStreak++;}
+
+// recovery logic
+if(res==="loss"){recoveryMode=true;recoveryLoss+=stake;riskPercent=1;}
+if(recoveryMode && res==="win"){
+recoveryLoss-=stake;
+if(recoveryLoss<=0){recoveryMode=false;riskPercent=2;recoveryLoss=0;}
+}
+
+// PERFORMANCE UPDATE
+updatePerformance(current.pair,profit);
+
+// HISTORY
+addHistory(start,profit);
+
+// SESSION END
+if(lossStreak>=3 || trades>=10){
+saveSession();
+}
+
+// RESET CURRENT TRADE
+current.executed=false;
+updateUI();
+}
+
+// PERFORMANCE
+function updatePerformance(pair,profit){
 
 totalProfit+=profit;
 sessionProfit+=profit;
 
-let totalTrades=trades;
-let winRate = totalTrades>0 ? (wins/totalTrades)*100 : 0;
-
-// pair stats
-if(!pairStats[pair]){
-pairStats[pair]={profit:0,trades:0};
-}
+if(!pairStats[pair]) pairStats[pair]={profit:0};
 pairStats[pair].profit+=profit;
-pairStats[pair].trades++;
 
-// best pair
-let best="---", maxProfit=-99999;
+if(!sessionPairs[pair]) sessionPairs[pair]={profit:0};
+sessionPairs[pair].profit+=profit;
+
+let best="---",max=-99999;
 for(let p in pairStats){
-if(pairStats[p].profit>maxProfit){
-maxProfit=pairStats[p].profit;
-best=p;
-}
+if(pairStats[p].profit>max){max=pairStats[p].profit;best=p;}
 }
 
-// UI
+let winRate = trades>0 ? (wins/trades)*100 : 0;
+
 document.getElementById("totalProfit").innerText=totalProfit.toFixed(2);
 document.getElementById("sessionProfit").innerText=sessionProfit.toFixed(2);
 document.getElementById("winRate").innerText=winRate.toFixed(1);
-document.getElementById("totalTrades").innerText=totalTrades;
+document.getElementById("totalTrades").innerText=trades;
 document.getElementById("totalWins").innerText=wins;
 document.getElementById("totalLosses").innerText=losses;
 document.getElementById("bestPair").innerText=best;
 }
 
+// SAVE SESSION
+function saveSession(){
+
+let now=new Date();
+let date=now.getDate()+"/"+(now.getMonth()+1)+"/"+now.getFullYear();
+
+let sorted=Object.entries(sessionPairs)
+.sort((a,b)=>b[1].profit-a[1].profit)
+.slice(0,3)
+.map(x=>x[0])
+.join(", ");
+
+let goalReached = balance>=goal;
+
+let row=`<tr style="${goalReached?'background:#064e3b':''}">
+<td>${date}</td>
+<td>${sessionCount}</td>
+<td>${goalReached ? goal.toFixed(2) : '-'}</td>
+<td>${sessionProfit.toFixed(2)}</td>
+<td>${sorted || '-'}</td>
+</tr>`;
+
+document.getElementById("sessionTable").innerHTML+=row;
+
+sessionCount++;
+sessionProfit=0;
+sessionPairs={};
+}
+
+// HISTORY
+function addHistory(start,profit){
+
+let now=new Date();
+let date=now.getDate()+"/"+(now.getMonth()+1)+"/"+now.getFullYear();
+let time=now.toLocaleTimeString();
+
+let nextStake=Math.max(balance*(riskPercent/100),MIN_STAKE);
+
+let row=`<tr>
+<td>${date}<br>${time}</td>
+<td>${current.pair}</td>
+<td>${current.signal}</td>
+<td>${current.payout}%</td>
+<td class="${profit>=0?'green':'red'}">${profit>=0?'win':'loss'}</td>
+<td>${start.toFixed(2)}</td>
+<td>${balance.toFixed(2)}</td>
+<td class="${profit>=0?'green':'red'}">${profit.toFixed(2)}</td>
+<td>${riskPercent}%</td>
+<td>${nextStake.toFixed(2)}</td>
+</tr>`;
+
+document.getElementById("history").innerHTML+=row;
+}
+
+// RESET
+function resetSession(){
+trades=0;wins=0;losses=0;lossStreak=0;
+riskPercent=2;recoveryMode=false;recoveryLoss=0;
+sessionProfit=0;sessionPairs={};
+document.getElementById("executeBtn").disabled=true;
+}
+
+// UI
+function updateUI(){
+document.getElementById("balance").innerText=balance.toFixed(2);
+
+let stake=Math.max(balance*(riskPercent/100),MIN_STAKE);
+document.getElementById("stake").innerText=stake.toFixed(2);
+
+document.getElementById("trades").innerText=trades;
+document.getElementById("wins").innerText=wins;
+document.getElementById("losses").innerText=losses;
+document.getElementById("streak").innerText=lossStreak;
+
+let progress=((balance-baseBalance)/(goal-baseBalance))*100;
+progress=Math.max(0,Math.min(100,progress));
+
+document.getElementById("progress").innerText=progress.toFixed(1);
+document.getElementById("goalStatus").innerHTML=
+balance>=goal?"<span class='green'>Goal reached</span>":"Not reached";
+
+document.getElementById("lock").innerHTML=
+recoveryMode?"<span class='red'>RECOVERY MODE ACTIVE (1%)</span>":"";
+}
+
 </script>
+
+</body>
+</html>
